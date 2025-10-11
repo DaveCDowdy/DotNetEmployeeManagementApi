@@ -43,3 +43,4 @@
 /Volumes/Secondary/CodingProjects/EmployeeManagementApi/EmployeeManagementApi/bin/Debug/net9.0/Swashbuckle.AspNetCore.SwaggerGen.dll
 /Volumes/Secondary/CodingProjects/EmployeeManagementApi/EmployeeManagementApi/bin/Debug/net9.0/Swashbuckle.AspNetCore.SwaggerUI.dll
 /Volumes/Secondary/CodingProjects/EmployeeManagementApi/EmployeeManagementApi/obj/Debug/net9.0/EmployeeManagementApi.MvcApplicationPartsAssemblyInfo.cs
+/Volumes/Secondary/CodingProjects/EmployeeManagementApi/EmployeeManagementApi/obj/Debug/net9.0/EmployeeManagementApi.sourcelink.json

@@ -19,7 +19,7 @@ namespace EmployeeManagementApi
                 {
                     policyBuilder.WithOrigins("http://localhost:4200")
                         .AllowAnyHeader()
-                        .AllowAnyHeader();
+                        .AllowAnyMethod();
                 });
             });
 

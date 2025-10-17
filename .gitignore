@@ -34,6 +34,9 @@ bld/
 # Visual Studio Code cache directory
 .vscode/
 
+# JetBrains Rider/IntelliJ IDE files
+.idea/
+
 # Project files
 *.log
 *.pfx

@@ -1,31 +1,28 @@
 using EmployeeManagement.Application.Interfaces;
-using EmployeeManagement.Application.Services;
 using EmployeeManagement.Domain;
 using EmployeeManagement.Infrastructure.Data;
 using EmployeeManagement.Infrastructure.Repositories;
 
 using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using EmployeeManagement.Application.Employees.Queries;
+using EmployeeManagement.Application.Employees.Commands;
+using EmployeeManagement.Application.Validation;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- SERVICES (Dependency Injection) ---
-
-// Infrastructure: DbContext Registration (In-Memory)
 builder.Services.AddDbContext<AppDbContext>(options => 
     options.UseInMemoryDatabase("EmployeeDb")
 );
 
-// Infrastructure & Application: Register Concrete Repository against Interface
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
-// Application: Register Application Service (Use Cases)
-builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetAllEmployeesQuery).Assembly));
 
-// Application: Register Fluent Validation from the Application assembly
-builder.Services.AddValidatorsFromAssembly(typeof(EmployeeService).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(GetAllEmployeesQuery).Assembly);
 
-// Presentation: CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyCors", policyBuilder =>
@@ -36,13 +33,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Presentation: API Explorer / Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Seed data function to prepopulate the In-Memory database
 app.Use(async (context, next) =>
 {
     using var scope = app.Services.CreateScope();
@@ -58,8 +53,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// --- PIPELINE CONFIGURATION ---
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -73,12 +66,19 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("MyCors");
 
-// --- ENDPOINT VALIDATION HELPER ---
+// FIXED: Helper function now takes HttpContext to manually fetch the validator service
 async Task<IResult> ValidateAndRunAsync<T>(
-    IValidator<T> validator, 
     T model, 
-    Func<Task<IResult>> handler)
+    Func<Task<IResult>> handler,
+    HttpContext httpContext) where T : notnull
 {
+    var validator = httpContext.RequestServices.GetService<IValidator<T>>();
+    
+    if (validator is null)
+    {
+        return Results.Problem($"Validator service for {typeof(T).Name} not found.", statusCode: 500); 
+    }
+
     var validationResult = await validator.ValidateAsync(model);
     if (!validationResult.IsValid)
     {
@@ -87,52 +87,55 @@ async Task<IResult> ValidateAndRunAsync<T>(
     return await handler();
 }
 
-// --- MINIMAL API ENDPOINTS (Replacing your Controller Actions) ---
-
 // GET ALL EMPLOYEES
-app.MapGet("/api/employee", async (EmployeeService service) =>
-    Results.Ok(await service.GetAllEmployeesAsync()))
-    .WithOpenApi();
+app.MapGet("/api/employee", async (ISender sender) =>
+{
+    var employees = await sender.Send(new GetAllEmployeesQuery());
+    return Results.Ok(employees);
+})
+.WithOpenApi();
 
 // GET EMPLOYEE BY ID
-app.MapGet("/api/employee/{id:int}", async (int id, EmployeeService service) =>
+app.MapGet("/api/employee/{id:int}", async (int id, ISender sender) =>
 {
-    var employee = await service.GetEmployeeByIdAsync(id);
+    var employee = await sender.Send(new GetEmployeeByIdQuery(id));
     return employee is null ? Results.NotFound() : Results.Ok(employee);
 })
 .WithName("GetEmployeeById")
 .WithOpenApi();
 
 // CREATE EMPLOYEE (POST)
-app.MapPost("/api/employee", async (Employee employee, EmployeeService service, IValidator<Employee> validator) =>
+// FIXED: Removed IValidator<CreateEmployeeCommand> parameter and added HttpContext
+app.MapPost("/api/employee", async (CreateEmployeeCommand command, ISender sender, HttpContext httpContext) =>
 {
-    return await ValidateAndRunAsync(validator, employee, async () =>
+    return await ValidateAndRunAsync(command, async () =>
     {
-        var newEmployee = await service.CreateEmployeeAsync(employee);
+        var newEmployee = await sender.Send(command);
         return Results.CreatedAtRoute("GetEmployeeById", new { id = newEmployee.Id }, newEmployee);
-    });
+    }, httpContext);
 })
 .WithOpenApi();
 
 // UPDATE EMPLOYEE (PUT)
-app.MapPut("/api/employee/{id:int}", async (int id, Employee employee, EmployeeService service, IValidator<Employee> validator) =>
+// FIXED: Removed IValidator<UpdateEmployeeCommand> parameter and added HttpContext
+app.MapPut("/api/employee/{id:int}", async (int id, UpdateEmployeeCommand command, ISender sender, HttpContext httpContext) =>
 {
-    if (id != employee.Id) return Results.BadRequest();
+    if (id != command.Id) return Results.BadRequest();
 
-    return await ValidateAndRunAsync(validator, employee, async () =>
+    return await ValidateAndRunAsync(command, async () =>
     {
-        await service.UpdateEmployeeAsync(employee);
-        return Results.CreatedAtRoute("GetEmployeeById", new { id = employee.Id }, employee); 
-    });
+        await sender.Send(command); 
+        return Results.NoContent();
+    }, httpContext);
 })
 .WithOpenApi();
 
 // DELETE EMPLOYEE (DELETE)
-app.MapDelete("/api/employee/{id:int}", async (int id, EmployeeService service) =>
+app.MapDelete("/api/employee/{id:int}", async (int id, ISender sender) =>
 {
     try
     {
-        await service.DeleteEmployeeAsync(id);
+        await sender.Send(new DeleteEmployeeCommand(id));
         return Results.NoContent();
     }
     catch (KeyNotFoundException)

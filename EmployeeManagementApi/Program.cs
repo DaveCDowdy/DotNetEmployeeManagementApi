@@ -2,13 +2,14 @@ using EmployeeManagement.Application.Interfaces;
 using EmployeeManagement.Domain;
 using EmployeeManagement.Infrastructure.Data;
 using EmployeeManagement.Infrastructure.Repositories;
-
+using EmployeeManagement.Application.DTOs;
+using AutoMapper;
+using EmployeeManagement.Application;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using EmployeeManagement.Application.Employees.Queries;
 using EmployeeManagement.Application.Employees.Commands;
-using EmployeeManagement.Application.Validation;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,7 @@ builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetAllEmployeesQuery).Assembly));
 
+builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly); 
 builder.Services.AddValidatorsFromAssembly(typeof(GetAllEmployeesQuery).Assembly);
 
 builder.Services.AddCors(options =>
@@ -38,11 +40,12 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.Use(async (context, next) =>
+app.Use(async (_, next) =>
 {
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (await dbContext.Employees.CountAsync() == 0)
+    
+    if (!await dbContext.Employees.AnyAsync())
     {
         dbContext.Employees.AddRange(
             new Employee { Id = 1, FirstName = "Alice", LastName = "Smith", Email = "alice@corp.com", Phone = "5551234567", Position = "Developer" },
@@ -66,7 +69,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("MyCors");
 
-// FIXED: Helper function now takes HttpContext to manually fetch the validator service
 async Task<IResult> ValidateAndRunAsync<T>(
     T model, 
     Func<Task<IResult>> handler,
@@ -104,20 +106,23 @@ app.MapGet("/api/employee/{id:int}", async (int id, ISender sender) =>
 .WithName("GetEmployeeById")
 .WithOpenApi();
 
-// CREATE EMPLOYEE (POST)
-// FIXED: Removed IValidator<CreateEmployeeCommand> parameter and added HttpContext
-app.MapPost("/api/employee", async (CreateEmployeeCommand command, ISender sender, HttpContext httpContext) =>
+// CREATE EMPLOYEE (POST) - Now uses CreateEmployeeRequest DTO
+app.MapPost("/api/employee", async (CreateEmployeeRequest request, ISender sender, HttpContext httpContext) =>
 {
-    return await ValidateAndRunAsync(command, async () =>
+    return await ValidateAndRunAsync(request, async () =>
     {
+        var mapper = httpContext.RequestServices.GetRequiredService<IMapper>();
+        
+        var command = mapper.Map<CreateEmployeeCommand>(request);
+        
         var newEmployee = await sender.Send(command);
+        
         return Results.CreatedAtRoute("GetEmployeeById", new { id = newEmployee.Id }, newEmployee);
     }, httpContext);
 })
 .WithOpenApi();
 
-// UPDATE EMPLOYEE (PUT)
-// FIXED: Removed IValidator<UpdateEmployeeCommand> parameter and added HttpContext
+// UPDATE EMPLOYEE (PUT) - Now validates the UpdateEmployeeCommand
 app.MapPut("/api/employee/{id:int}", async (int id, UpdateEmployeeCommand command, ISender sender, HttpContext httpContext) =>
 {
     if (id != command.Id) return Results.BadRequest();

@@ -1,12 +1,13 @@
 ﻿using MediatR;
 using EmployeeManagement.Domain;
 using EmployeeManagement.Application.Interfaces;
+using EmployeeManagement.Application.DTOs;
+using AutoMapper;
 
 namespace EmployeeManagement.Application.Employees.Commands
 {
-    public record CreateEmployeeCommand : IRequest<Employee>, IEmployeeCommand
+    public record CreateEmployeeCommand : IRequest<EmployeeResponse>, IEmployeeCommand
     {
-        // These properties will eventually be DTOs, but we use Domain entities for now.
         public string FirstName { get; init; } = "";
         public string LastName { get; init; } = "";
         public string Email { get; init; } = "";
@@ -14,24 +15,18 @@ namespace EmployeeManagement.Application.Employees.Commands
         public string Position { get; init; } = "";
     }
     
-    public class CreateEmployeeCommandHandler(IEmployeeRepository employeeRepository)
-        : IRequestHandler<CreateEmployeeCommand, Employee>
+    public class CreateEmployeeCommandHandler(IEmployeeRepository employeeRepository, IMapper mapper)
+        : IRequestHandler<CreateEmployeeCommand, EmployeeResponse>
     {
-        public async Task<Employee> Handle(
+        public async Task<EmployeeResponse> Handle(
             CreateEmployeeCommand request, 
             CancellationToken cancellationToken)
         {
-            // Map Command data to Domain Entity
-            var employee = new Employee
-            {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Email = request.Email,
-                Phone = request.Phone,
-                Position = request.Position
-            };
+            var employee = mapper.Map<Employee>(request);
             
-            return await employeeRepository.AddAsync(employee);
+            var newEmployee = await employeeRepository.AddAsync(employee);
+            
+            return mapper.Map<EmployeeResponse>(newEmployee);
         }
     }
 }

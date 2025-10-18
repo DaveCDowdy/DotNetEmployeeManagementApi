@@ -1,19 +1,22 @@
 ﻿using MediatR;
-using EmployeeManagement.Domain;
 using EmployeeManagement.Application.Interfaces;
+using EmployeeManagement.Application.DTOs;
+using AutoMapper;
 
 namespace EmployeeManagement.Application.Employees.Queries
 {
-    public record GetAllEmployeesQuery : IRequest<IEnumerable<Employee>>;
-    
-    public class GetAllEmployeesQueryHandler(IEmployeeRepository employeeRepository)
-        : IRequestHandler<GetAllEmployeesQuery, IEnumerable<Employee>>
+    public record GetAllEmployeesQuery : IRequest<IEnumerable<EmployeeResponse>>;
+
+    public class GetAllEmployeesQueryHandler(IEmployeeRepository employeeRepository, IMapper mapper)
+        : IRequestHandler<GetAllEmployeesQuery, IEnumerable<EmployeeResponse>>
     {
-        public async Task<IEnumerable<Employee>> Handle(
+        public async Task<IEnumerable<EmployeeResponse>> Handle(
             GetAllEmployeesQuery request, 
             CancellationToken cancellationToken)
         {
-            return await employeeRepository.GetAllAsync();
+            var employees = await employeeRepository.GetAllAsync();
+            
+            return mapper.Map<IEnumerable<EmployeeResponse>>(employees);
         }
     }
 }

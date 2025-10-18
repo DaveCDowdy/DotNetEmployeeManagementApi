@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using EmployeeManagement.Domain;
 using EmployeeManagement.Application.Interfaces;
+using AutoMapper;
 
 namespace EmployeeManagement.Application.Employees.Commands
 {
@@ -14,23 +15,14 @@ namespace EmployeeManagement.Application.Employees.Commands
         public string Position { get; init; } = "";
     }
     
-    public class UpdateEmployeeCommandHandler(IEmployeeRepository employeeRepository)
+    public class UpdateEmployeeCommandHandler(IEmployeeRepository employeeRepository, IMapper mapper)
         : IRequestHandler<UpdateEmployeeCommand, Unit>
     {
         public async Task<Unit> Handle(
             UpdateEmployeeCommand request, 
             CancellationToken cancellationToken)
         {
-
-            var employeeToUpdate = new Employee
-            {
-                Id = request.Id,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Email = request.Email,
-                Phone = request.Phone,
-                Position = request.Position
-            };
+            var employeeToUpdate = mapper.Map<Employee>(request);
             
             await employeeRepository.UpdateAsync(employeeToUpdate);
             

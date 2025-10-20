@@ -21,4 +21,8 @@
       <ProjectReference Include="..\EmployeeManagement.Application\EmployeeManagement.Application.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Program.cs" />
+    </ItemGroup>
+
 </Project>

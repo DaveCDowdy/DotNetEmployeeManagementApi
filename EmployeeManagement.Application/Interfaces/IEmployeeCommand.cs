@@ -2,10 +2,10 @@
 {
     public interface IEmployeeCommand
     {
-        string FirstName { get; init; }
-        string LastName { get; init; }
-        string Email { get; init; }
-        string Phone { get; init; }
-        string Position { get; init; }
+        string FirstName { get;  }
+        string LastName { get;  }
+        string Email { get;  }
+        string Phone { get;  }
+        string Position { get;  }
     }
 }

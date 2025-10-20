@@ -10,7 +10,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using EmployeeManagement.Application.Employees.Queries;
 using EmployeeManagement.Application.Employees.Commands;
-using Microsoft.AspNetCore.Mvc;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -109,20 +108,21 @@ app.MapGet("/api/employee/{id:int}", async (int id, ISender sender) =>
 .WithOpenApi();
 
 // CREATE EMPLOYEE (POST) - Now uses CreateEmployeeRequest DTO
-app.MapPost("/api/employee", async ([FromBody] CreateEmployeeRequest request, ISender sender, HttpContext httpContext) => 
+app.MapPost("/api/employee", async (CreateEmployeeRequest request, ISender sender, HttpContext httpContext) =>
+{
+    return await ValidateAndRunAsync(request, async () =>
     {
-        return await ValidateAndRunAsync(request, async () =>
-        {
-            var mapper = httpContext.RequestServices.GetRequiredService<IMapper>();
+        var mapper = httpContext.RequestServices.GetRequiredService<IMapper>();
         
-            var command = mapper.Map<CreateEmployeeCommand>(request);
+        var command = mapper.Map<CreateEmployeeCommand>(request);
         
-            var newEmployee = await sender.Send(command);
+        var newEmployee = await sender.Send(command);
         
-            return Results.CreatedAtRoute("GetEmployeeById", new { id = newEmployee.Id }, newEmployee);
-        }, httpContext);
-    })
-    .WithOpenApi();
+        return Results.CreatedAtRoute("GetEmployeeById", new { id = newEmployee.Id }, newEmployee);
+    }, httpContext);
+})
+.WithOpenApi();
+
 // UPDATE EMPLOYEE (PUT) 
 app.MapPut("/api/employee/{id:int}", async (int id, UpdateEmployeeCommand command, ISender sender, HttpContext httpContext) =>
     {

@@ -1,14 +1,11 @@
-﻿// File: EmployeeManagement.Application.DTOs/CreateEmployeeRequest.cs
-using EmployeeManagement.Application.Interfaces;
+﻿namespace EmployeeManagement.Application.DTOs
 
-namespace EmployeeManagement.Application.DTOs
 {
-    public record CreateEmployeeRequest : IEmployeeCommand
-    {
-        public required string FirstName { get; init; } 
-        public required string LastName { get; init; }
-        public required string Email { get; init; }
-        public required string Phone { get; init; }
-        public required string Position { get; init; }
-    }
+    public record CreateEmployeeRequest(
+        string FirstName,
+        string LastName,
+        string Email,
+        string Phone,
+        string Position
+    );
 }

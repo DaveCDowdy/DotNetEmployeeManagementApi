@@ -1,11 +1,10 @@
 ﻿namespace EmployeeManagement.Domain;
 
-public class Employee
-{
-    public int Id { get; set; }
-    public string FirstName { get; set; } = "";
-    public string LastName { get; set; } = "";
-    public string Email { get; set; } = "";
-    public string Phone { get; set; } = "";
-    public string Position { get; set; } = "";
-}
+public record Employee(
+    int Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Phone,
+    string Position
+);

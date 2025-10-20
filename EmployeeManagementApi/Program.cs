@@ -48,8 +48,9 @@ app.Use(async (_, next) =>
     if (!await dbContext.Employees.AnyAsync())
     {
         dbContext.Employees.AddRange(
-            new Employee { Id = 1, FirstName = "Alice", LastName = "Smith", Email = "alice@corp.com", Phone = "5551234567", Position = "Developer" },
-            new Employee { Id = 2, FirstName = "Bob", LastName = "Jones", Email = "bob@corp.com", Phone = "5559876543", Position = "Manager" }
+            // FIX: Using the 6-parameter Employee record constructor
+            new Employee(1, "Alice", "Smith", "alice@corp.com", "5551234567", "Developer"),
+            new Employee(2, "Bob", "Jones", "bob@corp.com", "5559876543", "Manager")
         );
         await dbContext.SaveChangesAsync();
     }
@@ -122,18 +123,25 @@ app.MapPost("/api/employee", async (CreateEmployeeRequest request, ISender sende
 })
 .WithOpenApi();
 
-// UPDATE EMPLOYEE (PUT) - Now validates the UpdateEmployeeCommand
+// UPDATE EMPLOYEE (PUT) 
 app.MapPut("/api/employee/{id:int}", async (int id, UpdateEmployeeCommand command, ISender sender, HttpContext httpContext) =>
-{
-    if (id != command.Id) return Results.BadRequest();
-
-    return await ValidateAndRunAsync(command, async () =>
     {
-        await sender.Send(command); 
-        return Results.NoContent();
-    }, httpContext);
-})
-.WithOpenApi();
+        if (id != command.Id) return Results.BadRequest();
+
+        return await ValidateAndRunAsync(command, async () =>
+        {
+            try
+            {
+                await sender.Send(command); 
+                return Results.NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return Results.NotFound($"Employee with ID {id} not found.");
+            }
+        }, httpContext);
+    })
+    .WithOpenApi();
 
 // DELETE EMPLOYEE (DELETE)
 app.MapDelete("/api/employee/{id:int}", async (int id, ISender sender) =>

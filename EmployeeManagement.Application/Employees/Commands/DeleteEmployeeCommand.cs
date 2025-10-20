@@ -12,7 +12,14 @@ public class DeleteEmployeeCommandHandler(IEmployeeRepository employeeRepository
         DeleteEmployeeCommand request, 
         CancellationToken cancellationToken)
     {
-        await employeeRepository.DeleteAsync(request.Id);
+        var employeeToDelete = await employeeRepository.GetByIdAsync(request.Id);
+        
+        if (employeeToDelete == null)
+        {
+            throw new KeyNotFoundException($"Employee with ID {request.Id} not found for deletion.");
+        }
+        
+        await employeeRepository.DeleteAsync(request.Id); 
             
         return Unit.Value;
     }

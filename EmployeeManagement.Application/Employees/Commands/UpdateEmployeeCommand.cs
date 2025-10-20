@@ -22,7 +22,14 @@ namespace EmployeeManagement.Application.Employees.Commands
             UpdateEmployeeCommand request, 
             CancellationToken cancellationToken)
         {
-            var employeeToUpdate = mapper.Map<Employee>(request);
+            var employeeToUpdate = await employeeRepository.GetByIdAsync(request.Id);
+            
+            if (employeeToUpdate == null)
+            {
+                throw new KeyNotFoundException($"Employee with ID {request.Id} not found.");
+            }
+            
+            mapper.Map(request, employeeToUpdate);
             
             await employeeRepository.UpdateAsync(employeeToUpdate);
             

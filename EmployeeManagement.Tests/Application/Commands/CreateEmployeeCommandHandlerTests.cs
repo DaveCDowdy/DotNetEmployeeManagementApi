@@ -14,12 +14,12 @@ namespace EmployeeManagement.Tests.Application.Commands
         private readonly Mock<IEmployeeRepository> _mockRepo;
         private readonly Mock<IMapper> _mockMapper;
         private readonly CreateEmployeeCommandHandler _handler;
-        
+
         public CreateEmployeeCommandHandlerTests()
         {
             _mockRepo = new Mock<IEmployeeRepository>();
             _mockMapper = new Mock<IMapper>();
-            
+
             _handler = new CreateEmployeeCommandHandler(_mockRepo.Object, _mockMapper.Object);
         }
 
@@ -36,50 +36,53 @@ namespace EmployeeManagement.Tests.Application.Commands
             };
             
             var domainEmployeeBeforeSave = new Employee(
-                Id: 0, 
-                FirstName: command.FirstName, 
-                LastName: command.LastName, 
-                Email: command.Email, 
-                Phone: command.Phone, 
-                Position: command.Position
+                0, 
+                command.FirstName,
+                command.LastName,
+                command.Email,
+                command.Phone,
+                command.Position
             );
-            
+
             const int newEmployeeId = 10;
             var domainEmployeeAfterSave = new Employee(
-                Id: newEmployeeId,
-                FirstName: command.FirstName, 
-                LastName: command.LastName, 
-                Email: command.Email, 
-                Phone: command.Phone, 
-                Position: command.Position
+                newEmployeeId, 
+                command.FirstName,
+                command.LastName,
+                command.Email,
+                command.Phone,
+                command.Position
             );
             
             var expectedResponse = new EmployeeResponse(
                 Id: newEmployeeId,
-                FirstName: command.FirstName, 
-                LastName: command.LastName, 
-                Email: command.Email, 
-                Phone: command.Phone, 
+                FirstName: command.FirstName,
+                LastName: command.LastName,
+                Email: command.Email,
+                Phone: command.Phone,
                 Position: command.Position
             );
-            
+
             _mockMapper.Setup(m => m.Map<Employee>(command))
-                       .Returns(domainEmployeeBeforeSave);
-            
+                .Returns(domainEmployeeBeforeSave);
+
             _mockRepo.Setup(r => r.AddAsync(domainEmployeeBeforeSave))
-                     .ReturnsAsync(domainEmployeeAfterSave);
-            
+                .ReturnsAsync(domainEmployeeAfterSave);
+
             _mockMapper.Setup(m => m.Map<EmployeeResponse>(domainEmployeeAfterSave))
-                       .Returns(expectedResponse);
-            
+                .Returns(expectedResponse);
+
             var result = await _handler.Handle(command, CancellationToken.None);
-            
+
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(expectedResponse);
-            
-            _mockMapper.Verify(m => m.Map<Employee>(command), Times.Once, "Mapper must convert the command to a domain entity.");
-            _mockRepo.Verify(r => r.AddAsync(domainEmployeeBeforeSave), Times.Once, "Repository must be called once to save the new employee.");
-            _mockMapper.Verify(m => m.Map<EmployeeResponse>(domainEmployeeAfterSave), Times.Once, "Mapper must convert the saved entity back to the DTO.");
+
+            _mockMapper.Verify(m => m.Map<Employee>(command), Times.Once,
+                "Mapper must convert the command to a domain entity.");
+            _mockRepo.Verify(r => r.AddAsync(domainEmployeeBeforeSave), Times.Once,
+                "Repository must be called once to save the new employee.");
+            _mockMapper.Verify(m => m.Map<EmployeeResponse>(domainEmployeeAfterSave), Times.Once,
+                "Mapper must convert the saved entity back to the DTO.");
         }
     }
 }

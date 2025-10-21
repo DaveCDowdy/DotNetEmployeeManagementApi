@@ -2,7 +2,6 @@
 using EmployeeManagement.Domain;
 using EmployeeManagement.Application.DTOs;
 using EmployeeManagement.Application.Employees.Commands;
-using EmployeeManagement.Application.Employees.Queries;
 
 namespace EmployeeManagement.Application
 {
@@ -10,6 +9,7 @@ namespace EmployeeManagement.Application
     {
         public MappingProfile()
         {
+            CreateMap<string, string>().ConvertUsing((src,_) => src ?? string.Empty);
             CreateMap<Employee, EmployeeResponse>();
             
             CreateMap<CreateEmployeeRequest, CreateEmployeeCommand>();

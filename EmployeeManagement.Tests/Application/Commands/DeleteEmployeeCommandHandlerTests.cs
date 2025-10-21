@@ -24,24 +24,24 @@ namespace EmployeeManagement.Tests.Application.Commands
             const int employeeId = 5;
             
             var existingEmployee = new Employee(
-                Id: employeeId, 
-                FirstName: "To", 
-                LastName: "BeDeleted", 
-                Email: "delete@me.com", 
-                Phone: "111-0000", 
-                Position: "Temp"
+                employeeId,      
+                "To", 
+                "BeDeleted", 
+                "delete@me.com", 
+                "111-0000", 
+                "Temp"
             );
 
             var command = new DeleteEmployeeCommand(employeeId);
-            
+    
             _mockRepo.Setup(r => r.GetByIdAsync(employeeId)).ReturnsAsync(existingEmployee);
-            
+    
             _mockRepo.Setup(r => r.DeleteAsync(employeeId)).Returns(Task.CompletedTask);
-            
+    
             var act = async () => await _handler.Handle(command, CancellationToken.None);
-            
+    
             await act.Should().NotThrowAsync();
-            
+    
             _mockRepo.Verify(r => r.GetByIdAsync(employeeId), Times.Once, "The handler must fetch the existing entity first.");
             _mockRepo.Verify(r => r.DeleteAsync(employeeId), Times.Once, "The repository's DeleteAsync must be called once with the correct ID.");
         }

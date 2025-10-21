@@ -29,12 +29,12 @@ namespace EmployeeManagement.Tests.Application.Queries
             const int employeeId = 5;
             
             var domainEmployee = new Employee(
-                Id: employeeId, 
-                FirstName: "Clark", 
-                LastName: "Kent", 
-                Email: "clark@daily.com", 
-                Phone: "555-1111", 
-                Position: "Reporter"
+                employeeId, 
+                "Clark", 
+                "Kent", 
+                "clark@daily.com", 
+                "555-1111", 
+                "Reporter"
             );
             
             var expectedResponse = new EmployeeResponse(
@@ -45,19 +45,19 @@ namespace EmployeeManagement.Tests.Application.Queries
                 Phone: "555-1111", 
                 Position: "Reporter"
             );
-            
+    
             _mockRepo.Setup(r => r.GetByIdAsync(employeeId)).ReturnsAsync(domainEmployee);
-            
+    
             _mockMapper.Setup(m => m.Map<EmployeeResponse>(domainEmployee))
-                       .Returns(expectedResponse);
+                .Returns(expectedResponse);
 
             var query = new GetEmployeeByIdQuery(employeeId);
-            
+    
             var result = await _handler.Handle(query, CancellationToken.None);
-            
+    
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(expectedResponse);
-            
+    
             _mockRepo.Verify(r => r.GetByIdAsync(employeeId), Times.Once);
             _mockMapper.Verify(m => m.Map<EmployeeResponse>(domainEmployee), Times.Once);
         }

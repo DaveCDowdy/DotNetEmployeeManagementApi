@@ -10,6 +10,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using EmployeeManagement.Application.Employees.Queries;
 using EmployeeManagement.Application.Employees.Commands;
+using Microsoft.AspNetCore.Mvc;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -108,7 +109,7 @@ app.MapGet("/api/employee/{id:int}", async (int id, ISender sender) =>
 .WithOpenApi();
 
 // CREATE EMPLOYEE (POST) - Now uses CreateEmployeeRequest DTO
-app.MapPost("/api/employee", async (CreateEmployeeRequest request, ISender sender, HttpContext httpContext) =>
+app.MapPost("/api/employee", async ([FromBody] CreateEmployeeRequest request, ISender sender, HttpContext httpContext) =>
 {
     return await ValidateAndRunAsync(request, async () =>
     {

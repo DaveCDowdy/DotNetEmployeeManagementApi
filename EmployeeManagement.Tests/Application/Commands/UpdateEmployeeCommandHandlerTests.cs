@@ -25,7 +25,7 @@ namespace EmployeeManagement.Tests.Application.Commands
         public async Task Handle_ShouldUpdateEmployee_WhenEmployeeExists()
         {
             const int employeeId = 5;
-            
+    
             var command = new UpdateEmployeeCommand
             {
                 Id = employeeId,
@@ -37,24 +37,24 @@ namespace EmployeeManagement.Tests.Application.Commands
             };
             
             var existingEmployee = new Employee(
-                Id: employeeId, 
-                FirstName: "OldName", 
-                LastName: "OldLast", 
-                Email: "old@corp.com", 
-                Phone: "000-0000", 
-                Position: "Junior Dev"
+                employeeId,     
+                "OldName", 
+                "OldLast", 
+                "old@corp.com", 
+                "000-0000", 
+                "Junior Dev"
             );
-            
+    
             _mockRepo.Setup(r => r.GetByIdAsync(employeeId)).ReturnsAsync(existingEmployee);
-            
+    
             _mockMapper.Setup(m => m.Map(command, existingEmployee)); 
-            
+    
             _mockRepo.Setup(r => r.UpdateAsync(existingEmployee)).Returns(Task.CompletedTask);
-            
+    
             var act = async () => await _handler.Handle(command, CancellationToken.None);
-            
+    
             await act.Should().NotThrowAsync();
-            
+    
             _mockRepo.Verify(r => r.GetByIdAsync(employeeId), Times.Once, "The handler must fetch the existing entity.");
             _mockMapper.Verify(m => m.Map(command, existingEmployee), Times.Once, "The mapper must be called to apply changes to the existing entity.");
             _mockRepo.Verify(r => r.UpdateAsync(existingEmployee), Times.Once, "The repository must be called to save the modified entity.");
